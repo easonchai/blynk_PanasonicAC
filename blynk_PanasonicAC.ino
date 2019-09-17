@@ -4,7 +4,7 @@
     Latest Update: V1.4 (17 Sep. 2019)
 */
 /* Comment this out to disable prints and save space */
-#define BLYNK_PRINT Serial
+//#define BLYNK_PRINT Serial
 const int touchPin = 4;
 const int DHTPIN = 2;
 const int DHTTYPE = 11;
@@ -40,7 +40,15 @@ BLYNK_WRITE(V3){
 }
 
 BLYNK_WRITE(V4){ //Reset Button
-  changeState();
+  if(param.asInt() == HIGH){ //Only activate this once on button press
+    if(acOn){
+      acOn = false;
+      Blynk.virtualWrite(V3, LOW);
+    } else {
+      acOn = true;
+      Blynk.virtualWrite(V3, HIGH);
+    }
+  }
 }
 
 BLYNK_WRITE(V5){ //Auto On AC button
@@ -52,7 +60,7 @@ BLYNK_WRITE(V5){ //Auto On AC button
 }
 
 BLYNK_WRITE(V7){ //Step widget
-  autoOnTemp = param.asFloat();
+  autoOnTemp = param.asFloat(); //Updates the autoOnTemp with widget input
 }
 
 void setup(){
@@ -60,6 +68,7 @@ void setup(){
   Serial.begin(9600);
 
   Blynk.begin(auth, ssid, pass);
+  Blynk.virtualWrite(V7, autoOnTemp); //Make sure app is updated to default temp
 
   //External modules
   servo.attach(5); //Servo
@@ -73,7 +82,7 @@ void loop(){
   timer.run();
   if(digitalRead(touchPin) == 1){ //When touched
     changeState();
-    delay(500);
+    delay(300);
   } //Else nothing
 }
 
@@ -86,7 +95,7 @@ void changeState(){
     acOn = true;
     Blynk.virtualWrite(V3, HIGH);
   }
-  Blynk.syncVirtual(V3); //Sync with the app
+  Blynk.syncVirtual(V3); //Emulate a press
 
   //Whenever user activates the AirConditioner, or autoMode triggers, the auto mode is instantly disabled
   autoOn = false;
@@ -108,5 +117,15 @@ void sendTemp(){
 }
 
 void autoMode(float temperature){
+  /*Serial.println("Mode ON");
   Serial.println(autoOnTemp);
+   Serial.print("Auto On Mode: ");
+    Serial.println(autoOn); DEBUG ONLY*/
+   if(!acOn){ //Since AC not on yet, this mode can be activated
+     if(temperature >= autoOnTemp){ //Turn on ac
+      changeState();
+      Blynk.virtualWrite(V5, LOW);
+      Blynk.virtualWrite(V3, HIGH); //Press ON
+    }
+  }
 }
