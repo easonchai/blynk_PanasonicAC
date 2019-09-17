@@ -3,6 +3,7 @@ ESP8266 Air Conditioner Controller With Blynk App Support
 
 Author: Eason Chai
 Latest Update: 17 September 2019
+Version: 1.4
 
 Parts Used:
 - ESP8266
