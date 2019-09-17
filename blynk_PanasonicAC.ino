@@ -1,5 +1,10 @@
+/*  blynk_PanasonicAC
+ *  Author: Eason Chai
+    Github: https://github.com/easonchai/blynk_PanasonicAC
+    Latest Update: V1.4 (17 Sep. 2019)
+*/
 /* Comment this out to disable prints and save space */
-//#define BLYNK_PRINT Serial
+#define BLYNK_PRINT Serial
 const int touchPin = 4;
 const int DHTPIN = 2;
 const int DHTTYPE = 11;
@@ -27,31 +32,43 @@ SimpleTimer timer;
 
 //Stores state
 boolean acOn = false; //AC is off at first (This will be handled by the pushButton() method)
+boolean autoOn = false; //Automatically turns on the AC
+float autoOnTemp = 27.0; //Default
 
-BLYNK_WRITE(V3)
-{
+BLYNK_WRITE(V3){
   pressButton();
 }
 
-void setup()
-{
+BLYNK_WRITE(V4){ //Reset Button
+  changeState();
+}
+
+BLYNK_WRITE(V5){ //Auto On AC button
+  if(autoOn){
+    autoOn = false;
+  } else {
+    autoOn = true;
+  }
+}
+
+BLYNK_WRITE(V7){ //Step widget
+  autoOnTemp = param.asFloat();
+}
+
+void setup(){
   // Debug console
   Serial.begin(9600);
 
   Blynk.begin(auth, ssid, pass);
-  // You can also specify server:
-  //Blynk.begin(auth, ssid, pass, "blynk-cloud.com", 80);
-  //Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,100), 8080);
 
   //External modules
   servo.attach(5); //Servo
   pinMode(touchPin, INPUT); //Touch
   dht.begin();
-  timer.setInterval(15000L, sendTemp);
+  timer.setInterval(10000L, sendTemp);
 }
 
-void loop()
-{
+void loop(){
   Blynk.run();
   timer.run();
   if(digitalRead(touchPin) == 1){ //When touched
@@ -70,6 +87,9 @@ void changeState(){
     Blynk.virtualWrite(V3, HIGH);
   }
   Blynk.syncVirtual(V3); //Sync with the app
+
+  //Whenever user activates the AirConditioner, or autoMode triggers, the auto mode is instantly disabled
+  autoOn = false;
 }
 
 void pressButton(){
@@ -79,11 +99,14 @@ void pressButton(){
 }
 
 void sendTemp(){
- float t = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
- // You can send any value at any time.
- // Please don't send more that 10 values per second.
- //Blynk.virtualWrite(V5, h); // Humidity for gauge
+ float t = dht.readTemperature(); 
  Blynk.virtualWrite(V6, t); // Temperature for gauge
- //Blynk.virtualWrite(V7, h); // Humidity for graph
  Blynk.virtualWrite(V8, t); // Temperature for graph
+ if(autoOn){ //If autoOn is true, then send the temperature to autoMode
+  autoMode(t);
+ } //Else nothing
+}
+
+void autoMode(float temperature){
+  Serial.println(autoOnTemp);
 }
