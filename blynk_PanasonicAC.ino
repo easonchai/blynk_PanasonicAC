@@ -19,7 +19,7 @@ const int DHTTYPE = 11;
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-char auth[] = "Fj7FrKYD0OJsPeIOAzByEnEqApmJMLcr";
+char auth[] = "YOUR_TOKEN";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
